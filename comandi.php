@@ -2,29 +2,35 @@
 if (isset($msg)) {
     if (stripos($msg, "/start") === 0) {
         $menu[] = array(
-            array("text" => "Lista funzioni",
-                "callback_data" => "test"),
+            array("text" => "📃Lista funzioni",
+                "callback_data" => "list"),
         );
         $menu[] = array(
-            array("text" => "Github",
-                "callback_data" => "test"),
+            array("text" => "☕Github",
+                "url" => "https://github.com/SilverOS/Aegislash-Group-Defender"),
         );
         $menu[] = array(
-            array("text" => "Aggiungimi a un gruppo",
-                "callback_data" => "test"),
+            array("text" => "👥Aggiungimi a un gruppo",
+                "url" => "http://t.me/aegislashbot?startgroup=true"),
         );
         if (isset($cbdata)) {
-            cb_reply($cbid, "Ok", false, $cbmid, 'Benvenuto su Aegislashbot!\nQuesto è un bot open-source per la gestione dei gruppi sviluppato da @SilverOSp. Aggiungimi in un gruppo e fammi admin per permettermi di moderarlo al meglio!', $menu);
+            cb_reply($cbid, "Ok", false, $cbmid, 'Benvenuto su Aegislashbot!'. PHP_EOL. 'Questo è un bot open-source per la gestione dei gruppi sviluppato da @SilverOSp. Aggiungimi in un gruppo e fammi admin per permettermi di moderarlo al meglio!', $menu);
         } else {
-            sm($chatID, 'Benvenuto su Aegislashbot!\nQuesto è un bot open-source per la gestione dei gruppi sviluppato da @SilverOSp. Aggiungimi in un gruppo e fammi admin per permettermi di moderarlo al meglio!', $menu);
+            sm($chatID, 'Benvenuto su Aegislashbot!'.PHP_EOL .'Questo è un bot open-source per la gestione dei gruppi sviluppato da @SilverOSp. Aggiungimi in un gruppo e fammi admin per permettermi di moderarlo al meglio!', $menu);
         }
+    }
+    if ($cbdata == "list") {
+        $menu[] = array(
+            array("text" => "🔙Torna indietro",
+                "callback_data" => "/start"),
+        );
+        cb_reply($cbid, "Ok", false, $cbmid,"Funzioni del bot attuali: /ban,/unban,/mute,/unmute" , $menu);
     }
 }
 if ($chatID < 0) {
     if (isset($update['message']['new_chat_member'])) {
         if ($update['message']['new_chat_member']['username'] == $userbot) {
             sm($chatID, "Grazie per avermi aggiunto! Fammi admin per permettermi di funzionare correttamente!");
-            $db->prepare("insert into groups (chat_id,username) values ($chatID, ?)")->execute([$usernamechat]);
         }
 
     }
