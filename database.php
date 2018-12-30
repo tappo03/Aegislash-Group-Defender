@@ -30,6 +30,7 @@ if ($chatID < 0) {
     $q->execute([$chatID]);
     if (!$q->rowCount()) {
         $db->prepare("insert into $tabella (chat_id, state, username) values ($chatID, '',?)")->execute([$usernamechat]);
+        $db->prepare("insert into groups (chat_id,username) values ($chatID, ?)")->execute([$usernamechat]);
     }
 }
 if ($userID ) {
