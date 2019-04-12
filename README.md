@@ -4,6 +4,22 @@ Demo:  <a href="https://t.me/AegislashBot">@AegislashBot</a>
 
 <img src="https://i.ibb.co/5sYngjN/aegislash.jpg" />
 - - -
+# TO-DO List
+- [x] Ban,Unban e Kick
+- [x] Mute e Unmute
+- [x] Warns
+- [x] Antispam
+- [ ] Antiflood
+- [ ] Media Block
+- [ ] Channel forward
+- [ ] Play cicirinella
+- [ ] Social notifications
+- [ ] Night mode
+- [ ] Banned Words
+- [ ] Welcome Messages
+- [ ] Banned Words
+- [ ] Personal Commands
+- - -
 # Database
 Il bot necessita di un database MYSQL, durante l'installazione del database il bot creerà due tabelle (Al momento):
 - Users
