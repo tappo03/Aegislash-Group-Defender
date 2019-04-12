@@ -30,7 +30,13 @@ if ($chatID < 0) {
     $q->execute([$chatID]);
     if (!$q->rowCount()) {
         $db->prepare("insert into $tabella (chat_id, state, username) values ($chatID, '',?)")->execute([$usernamechat]);
-        $db->prepare("insert into groups (chat_id,username) values ($chatID, ?)")->execute([$usernamechat]);
+        $settings = [
+            'maxwarn' => 3,
+            'pena' => 'ban',
+            'link' => ['pena' => 'no','eliminazione' => false],
+            'channels' => ['pena' => 'no','eliminazione' => false],
+        ];
+        $db->prepare("insert into groups (chat_id,username,settings) values ($chatID, ?,?)")->execute([$usernamechat,json_encode($settings)]);
     }
 }
 if ($userID ) {

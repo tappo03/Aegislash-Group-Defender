@@ -26,9 +26,7 @@ function action($chatID, $action)
     );
     return sr("sendChatAction", $args);
 }
-function sm($chatID, $msg, $menu = false, $keyboardtype = false, $parse_mode = false, $reply_to_message = false, $disablewebpreview = false)
-{
-    global $token;
+function sm($chatID, $msg, $menu = false, $keyboardtype = false, $parse_mode = false, $reply_to_message = false, $disablewebpreview = false) {
     global $config;
     if (!$keyboardtype && $menu) {
         $keyboardtype = $config['tastiera'];
@@ -60,7 +58,7 @@ function sm($chatID, $msg, $menu = false, $keyboardtype = false, $parse_mode = f
         "text" => $msg,
         "parse_mode" => $parse_mode,
         "reply_to_message_id" => $reply_to_message,
-        "disable_web_page_preview" => false
+        "disable_web_page_preview" => $disablewebpreview,
     );
     if ($menu)
         $args['reply_markup'] = $rm;
@@ -75,7 +73,6 @@ function sendMessage()
 }
 function em($chatID, $msg, $msgid, $menu = false, $keyboardtype = false, $parse_mode = false, $reply_to_message = false, $disablewebpreview = false)
 {
-    global $token;
     global $config;
     if (!$keyboardtype && $menu) {
         $keyboardtype = $config['tastiera'];
@@ -114,7 +111,6 @@ function em($chatID, $msg, $msgid, $menu = false, $keyboardtype = false, $parse_
 }
 function cb_reply($id, $text, $alert = false, $cbmid = false, $ntext = false, $nmenu = false, $npm = "pred")
 {
-    global $api;
     global $chatID;
     global $config;
     if ($npm == 'pred')
@@ -149,8 +145,7 @@ function editMessageText()
     return call_user_func_array("em", func_get_args());
 }
 //ForwardMessage
-function fw($chatID, $from, $msgid)
-{
+function fw($chatID, $from, $msgid) {
     $args = array(
         "chat_id" => $chatID,
         "from_chat_id" => $from,
@@ -163,9 +158,8 @@ function forwardMessage()
     return call_user_func_array("fw", func_get_args());
 }
 //sendPhoto
-function si($chatID, $image, $caption = false, $menu = false, $keyboardtype = false, $parse_mode = false, $reply_to_message = false)
+function si($chatID, $image, $caption = "", $menu = false, $keyboardtype = false, $parse_mode = false, $reply_to_message = false)
 {
-    global $token;
     global $config;
     if (!$keyboardtype && $menu) {
         $keyboardtype = $config['tastiera'];
@@ -326,6 +320,51 @@ function promoteChatMember($chatID, $userID, $changeInfo, $postMsg, $modifyMsg, 
         "can_promote_members" => $promoteUsers
     );
     return sr("promoteChatMember", $args);
+}
+function warn ($chatID,$userID) {
+    global $db;
+    $warns = $db->prepare('SELECT warns FROM groups WHERE chat_id = ? LIMIT 1');
+    $warns->execute([$chatID]);
+    $res = $warns->fetch(PDO::FETCH_ASSOC);
+    $warnlist = json_decode($res['warns'],true);
+    if (!isset($warnlist[$userID])) {
+        $warnlist[$userID] = 0;
+    }
+    $warnlist[$userID]++;
+    $warnj = json_encode($warnlist);
+    $q = $db->prepare('UPDATE groups SET warns = ? WHERE chat_id = '.$chatID);
+    $q ->execute([$warnj]);
+    return $warnlist[$userID];
+}
+function setwarn ($chatID,$userID,$nw) {
+    global $db;
+    $warns = $db->prepare('SELECT warns FROM groups WHERE chat_id = ? LIMIT 1');
+    $warns->execute([$chatID]);
+    $res = $warns->fetch(PDO::FETCH_ASSOC);
+    $warnlist = json_decode($res['warns'],true);
+    $warnlist[$userID] = $nw;
+    $warnj = json_encode($warnlist);
+    $q = $db->prepare('UPDATE groups SET warns = ? WHERE chat_id = '.$chatID);
+    $q ->execute([$warnj]);
+    return $warnlist[$userID];
+}
+function unwarn ($chatID,$userID) {
+    global $db;
+    $warns = $db->prepare('SELECT warns FROM groups WHERE chat_id = ? LIMIT 1');
+    $warns->execute([$chatID]);
+    $res = $warns->fetch(PDO::FETCH_ASSOC);
+    $warnlist = json_decode($res['warns'],true);
+    if (!isset($warnlist[$userID])) {
+        $warnlist[$userID] = 0;
+    }
+    if ($warnlist[$userID] <= 0) {
+        return false;
+    }
+        $warnlist[$userID]--;
+    $warnj = json_encode($warnlist);
+    $q = $db->prepare('UPDATE groups SET warns = ? WHERE chat_id = '.$chatID);
+    $q ->execute([$warnj]);
+    return $warnlist[$userID];
 }
 function getlink($chatID)
 {

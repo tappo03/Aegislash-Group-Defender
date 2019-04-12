@@ -19,7 +19,7 @@ if (isset($msg)) {
             sm($chatID, 'Benvenuto su Aegislashbot!'.PHP_EOL .'Questo è un bot open-source per la gestione dei gruppi sviluppato da @SilverOSp. Aggiungimi in un gruppo e fammi admin per permettermi di moderarlo al meglio!', $menu);
         }
     }
-    if ($cbdata == "list") {
+    if (isset($cbdata)&& $cbdata == "list") {
         $menu[] = array(
             array("text" => "🔙Torna indietro",
                 "callback_data" => "/start"),
@@ -35,7 +35,15 @@ if ($chatID < 0) {
 
     }
     // Menu
-    if (stripos($msg, "/settings") === 0) {
+    if (isset($msg) && stripos($msg, "/settings") === 0) {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
         if (!isAdmin($chatID, $userID)) {
             sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
             exit;
@@ -43,6 +51,12 @@ if ($chatID < 0) {
         $menu[] = array(
             array("text" => "⛔Limitazioni utente",
                 "callback_data" => "/menulim"),
+            array("text" => "❗Warn",
+                "callback_data" => "/menuwarn"),
+        );
+        $menu[] = array(
+            array("text" => "✉️Antispam",
+                "callback_data" => "/menuantispam"),
         );
         if (isset($cbdata)) {
             cb_reply($cbid, "Ok", false, $cbmid, 'Ecco la lista delle impostazioni', $menu);
@@ -50,17 +64,213 @@ if ($chatID < 0) {
             sm($chatID, 'Ecco la lista delle impostazioni', $menu);
         }
     }
-    if ($cbdata == "/menulim") {
+    if (isset($cbdata) && stripos($cbdata,"/setantispam")===0) {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        if (explode(' ',$cbdata)[1] == "link") {
+            $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=? LIMIT 1');
+            $q->execute([$chatID]);
+            $res = $q->fetch(PDO::FETCH_ASSOC);
+            $imp = json_decode($res['settings'],true);
+            if (explode(' ',$cbdata)[2] == "Elimina") {
+            	$imp['link']['eliminazione'] = ($imp['link']['eliminazione'] == true) ? false : true;
+            } else {
+            	$imp['link']['pena'] = explode(' ',$cbdata)[2];
+            }
+            $q2 = $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1');
+            $q2->execute([json_encode($imp)]);
+        } elseif (explode(' ',$cbdata)[1] == "channel") {
+            $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=? LIMIT 1');
+            $q->execute([$chatID]);
+            $res = $q->fetch(PDO::FETCH_ASSOC);
+            $imp = json_decode($res['settings'],true);
+			if (explode(' ',$cbdata)[2] == "Elimina") {
+            	$imp['channels']['eliminazione'] = ($imp['channels']['eliminazione'] == true) ? false : true;
+            } else {
+            	$imp['channels']['pena'] = explode(' ',$cbdata)[2];
+            }            $q2 = $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1');
+            $q2->execute([json_encode($imp)]);
+        }
+        $cbdata = '/menuantispam';
+    }
+
+    if (isset($cbdata) && $cbdata == "/menuantispam") {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=? LIMIT 1');
+        $q->execute([$chatID]);
+        $res = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($res['settings'],true);
+        if ($imp['link']['eliminazione']) {
+            $elink = '✅';
+        } else {
+            $elink = '❌';
+        }
+        if ($imp['channels']['eliminazione']) {
+            $echan = '✅';
+        } else {
+            $echan = '❌';
+        }
+        $menu [] = [["text" => "🔗","callback_data" => "/link"],["text" => "✅","callback_data" => "/setantispam link no"],["text" => "❗️","callback_data" => "/setantispam link Warn"],["text" => "⛔","callback_data" => "/setantispam link Ban"],["text" => "🔇","callback_data" => "/setantispam link Mute"],["text" => "👞","callback_data" => "/setantispam link Kick"],["text" => "🗑","callback_data" => "/setantispam link Elimina"]];
+        $menu [] = [["text" => "📢","callback_data" => "/channel"],["text" => "✅","callback_data" => "/setantispam channel no"],["text" => "❗️","callback_data" => "/setantispam channel Warn"],["text" => "⛔","callback_data" => "/setantispam channel Ban"],["text" => "🔇","callback_data" => "/setantispam channel Mute"],["text" => "👞","callback_data" => "/setantispam channel Kick"],["text" => "🗑","callback_data" => "/setantispam channel Elimina"]];
         $menu[] = array(
             array("text" => "🔙Torna indietro",
                 "callback_data" => "/settings"),
         );
-        cb_reply($cbid, "Ok", false, $cbmid, '🚫 /ban' . PHP_EOL . 'Bandisci un utente dal gruppo' . PHP_EOL . "Formati:" . PHP_EOL . "<code>/ban @username tempo motivazione</code>\n<code>/ban @username motivazione</code>\n<code>/ban tempo motivazione</code>\nRispondendo all'utente da bannare:\n<code>/ban tempo moticazione</code>\n<code>/ban tempo</code>\n<code>/ban motivazione</code>. \nIl tempo deve essere in formato GG/MM/YYYY, al posto dell'username si può utilizzare anche l'id dell'utente.\n✔/unban\nPer sbannare un utente puoi usare:\n<code>/unabn</code> rispondendo a un suo messaggio\n<code>/unban @username</code>\n<code>/unban userID</code>\n💬/mute\nPer evitare che un utente possa inviare messaggi\n<code>/mute @username tempo motivazione</code>\n<code>/mute @username motivazione</code>\n<code>/mute tempo motivazione</code>\nRispondendo all'utente da bannare:\n<code>/mute tempo moticazione</code>\n<code>/mute tempo</code>\n<code>/mute motivazione</code>. \nIl tempo deve essere in formato GG/MM/YYYY, al posto dell'username si può utilizzare anche l'id dell'utente.\n✔/unmute\nPer sbannare un utente puoi usare:\n<code>/unmute</code> rispondendo a un suo messaggio\n<code>/unmute @username</code>\n<code>/unmute userID</code>", $menu);
+        cb_reply($cbid, "Ok", false, $cbmid, "✉️L'antispam serve a evitare messaggi pubblicitari indesiderati da parte degli utenti.\n\n🔗Pena invio link: ".$imp['link']['pena']." 🗑: $elink\n📢Pena invio username pubblici: ".$imp['channels']['pena']."  🗑: $echan\n❗️= Warn,🗑 = Eliminazione,✅ = nulla,⛔ = Ban,👞 = Kick,🔇 = Muta \n\n<i>Nella tastiera sottostante puoi modificare le pene</i>",$menu);
+    }
+    if (isset($cbdata) && $cbdata == "/menulim") {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $menu[] = array(
+            array("text" => "🔙Torna indietro",
+                "callback_data" => "/settings"),
+        );
+        // So che i messaggi così non andrebbero messi, ma non ci capivo un cazzo e venivano brutti,ora ve li beccate così.
+        cb_reply($cbid, "Ok", false, $cbmid, "🚫Ban\nPer bannare qualcuno dal tuo gruppo\n
+Uso: <code>/ban utente tempo motivazione</code>
+\nUtente è l'id o l'username dell'utente da bannare, <b>necessario</b> se non si risponde a un suo messaggio.\nTempo è la durata del ban,<b>opzionale,default per sempre</b>, in formato unix,oppure in formato DD/MM/YYYY\nMotivazione <b>opzionale</b>: Causa del ban.\n
+Rispondendo a un messaggio dell'utente da bannare:
+<code>/ban tempo motivazione</code>
+\nTempo è la durata del ban,<b>opzionale,default per sempre</b>, in formato unix,oppure in formato DD/MM/YYYY\nMotivazione <b>opzionale</b>: Causa del ban.\n
+✔Unban\nPer sbannare qualcuno dal gruppo\n
+Uso: <code>/unban utente</code>
+\n<code>/unban</code> rispondendo a un messaggio dell'utente da sbannare.\n
+👟Kick\nPer cacciare qualcuno dal gruppo\n
+Uso: <code>/kick utente</code>\n\n<code>/kick</code> rispondendo a un messaggio dell'utente da cacciare.\n
+🔕Mute\nPer non permettere a un utente di inviare messaggi.\n
+Uso: <code>/mute utente tempo motivazione</code>
+\nUtente è l'id o l'username dell'utente da bannare, <b>necessario</b> se non si risponde a un suo messaggio.\nTempo è la durata del mute,<b>opzionale,default per sempre</b>, in formato unix,oppure in formato DD/MM/YYYY\nMotivazione <b>opzionale</b>: Causa del mute.\n
+Rispondendo a un messaggio dell'utente da mutare:
+<code>/mute tempo motivazione</code>
+\nTempo è la durata del mute,<b>opzionale,default per sempre</b>, in formato unix,oppure in formato DD/MM/YYYY\nMotivazione <b>opzionale</b>: Causa del mute.\n
+✔Unmute\nPer smutare qualcuno\n
+Uso: <code>/unmute utente</code>
+\n<code>/unmute</code> rispondendo a un messaggio dell'utente da smutare.",$menu);
+    }
+    if (isset($cbdata) && $cbdata == "/menuwarn") {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $menu[] = array(
+            array("text" => "📛Imposta pena",
+                "callback_data" => "/maxw"),
+        );
+        $menu[] = array(
+            array("text" => "🔙Torna indietro",
+                "callback_data" => "/settings"),
+        );
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=?');
+        $q->execute([$chatID]);
+        $res = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($res['settings'],true);
+        $maxw = $imp['maxwarn'];
+        $pena = $imp['pena'];
+        cb_reply($cbid, "Ok", false, $cbmid,"❗Warn\n\nI warn servono ad ammonire un utente in caso compia qualche azione contro le regole.
+⚙Impostazioni:\n❗️Warn massimi: $maxw\n⛔️Pena: $pena
+/warn per aggiungere un warn
+Uso: <code>/warn utente motivazione</code>
+\nUtente è l'id o l'username dell'utente da warnare, <b>necessario</b> se non si risponde a un suo messaggio.\nMotivazione <b>opzionale</b>: Causa del warn.\n
+Rispondendo a un messaggio dell'utente da warnare:
+<code>/warn motivazione</code>\n
+✔/unwarn\nPer togliere un warn\n 
+Uso: <code>/unwarn utente</code>
+\n<code>/unwarn</code> rispondendo a un messaggio dell'utente da cui togliere il warn.\n
+Per impostare il numero di warn massimi usa <code>/setmaxwarn n</code>", $menu);
     }
 
+    if (isset($cbdata)&& stripos($cbdata, '/setwp')===0) {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $ex = explode(' ',$msg);
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=? LIMIT 1');
+        $q->execute([$chatID]);
+        $res = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($res['settings'],true);
+        $pena2 = $imp['pena'];
+        $pena = $ex[1];
+        if ($pena == $pena2) {
+            cb_reply($cbid,'Questa pena è già impostata.',true);
+        } elseif ($pena == 'ban' || $pena == 'kick' || $pena == 'mute') {
+            $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=? LIMIT 1');
+            $q->execute([$chatID]);
+            $res = $q->fetch(PDO::FETCH_ASSOC);
+            $imp = json_decode($res['settings'],true);
+            $imp['pena'] = $pena;
+            $q2 = $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1');
+            $q2->execute([json_encode($imp)]);
+            cb_reply($cbid,'Nuova pena impostata a ' . $pena,true);
+            $cbdata = '/maxw';
+        }
+    }
+    if (isset($cbdata) && $cbdata == "/maxw") {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=?');
+        $q->execute([$chatID]);
+        $res = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($res['settings'],true);
+        $pena = $imp['pena'];
+        $menu[] = array(
+            array("text" => "⛔️Ban",
+                "callback_data" => "/setwp ban"),
+            array("text" => "👞Kick",
+                "callback_data" => "/setwp kick"),
+            array("text" => "🔇Mute",
+                "callback_data" => "/setwp mute"),
+        );
+        $menu[] = array(
+            array("text" => "🔙Torna indietro",
+                "callback_data" => "/menuwarn"),
+        );
+        cb_reply($cbid, "Ok", false, $cbmid,"Ora imposta cosa succederà quando un utente raggiungerà il numero di warn massimi.\nPena attuale: $pena",$menu);
+    }
     //code
     if (isset($msg) || isset($cbdata)) {
         include('plugins/ban.php');
+        include('plugins/warn.php');
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id=? LIMIT 1');
+        $q->execute([$chatID]);
+        $res = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($res['settings'],true);
+        if ($imp['channels']['pena'] != "no" || $imp['link']['pena'] != "no" || $imp['channels']['eliminazione'] || $imp['link']['eliminazione']) {
+            include('plugins/antispam.php');
+        }
     }
 }
 if ($config['show_update']) {

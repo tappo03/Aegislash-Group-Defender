@@ -29,7 +29,6 @@ if (isset($update["message"]["message_id"])) $msgid = $update["message"]["messag
 if (isset($update["message"]["from"]["is_bot"])) $isbot = $update["message"]["from"]["is_bot"];
 if (isset($update["message"]["from"]["first_name"])) $nome = $update["message"]["from"]["first_name"];
 if (isset($update["message"]["from"]["last_name"])) $cognome = $update["message"]["from"]["last_name"];
-$fullname = $nome . " " . $cognome;
 if (isset($update["message"]["from"]["username"])) $username = $update["message"]["from"]["username"];
 if (isset($update["message"]["from"]["language_code"])) $lingua = $update["message"]["from"]["language_code"];
 if (isset($update["message"]["chat"]["type"])) $chat_type = $update["message"]["chat"]["type"];
