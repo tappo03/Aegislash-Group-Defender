@@ -2,7 +2,11 @@
 
 if (stripos($msg, '/ban') === 0) {
     if (!isAdmin($chatID, $userID)) {
-        sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+        if (isset($cbdata)) {
+            cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+        } else {
+            sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+        }
         exit;
     }
     $args = explode(' ', $msg);
@@ -115,58 +119,14 @@ if (stripos($msg, '/ban') === 0) {
 
     }
 }
-//Unban
-
+//unban
 if (stripos($msg,"/unban")===0) {
     if (!isAdmin($chatID, $userID)) {
-        sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
-        exit;
-    }
-    if (isset($replyid)) {
-        if (!isOk(unban($chatID, $replyuserid))) {
-            sm($chatID, "Non ho i permessi sufficenti per eseguire questa azione,assicurati che io sia admin");
-            exit;
-        }
-        if (isset($replyusername)) {
-            $usersbanned = '@' . $replyusername;
+        if (isset($cbdata)) {
+            cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
         } else {
-            $usersbanned = '<a href="tg://user?id=' . $replyuserid . '">' . htmlspecialchars($replynome) . '</a>';
+            sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
         }
-        sm($chatID, "Ho sbannato $usersbanned [$replyuserid] dal gruppo.");
-    } else {
-        $args = explode(' ',$msg);
-        if (stripos($args[1], "@") === 0) {
-            $id = id($args[1]);
-            if (!$id) {
-                sm($chatID, 'Utente non trovato');
-                exit;
-            }
-        } else {
-            if (!is_numeric($args[1])) {
-                sm($chatID, 'ID non valido');
-                exit;
-            }
-            $id = $args[1];
-        }
-        if (!isOK(unban($chatID, $id))) {
-            sm($chatID, "Non ho i permessi sufficenti per eseguire questa azione,assicurati che io sia admin");
-            exit;
-        }
-        if (username($id)) {
-            $usersbanned = '@' . username($id);
-        } else {
-            $usersbanned = '<a href="tg://user?id=' . $id . '">' . $id . '</a>';
-        }
-        sm($chatID, "Ho sbannato $usersbanned [$id] dal gruppo.");
-
-
-    }
-}
-
-//Mute
-if (stripos($msg,"/unban")===0) {
-    if (!isAdmin($chatID, $userID)) {
-        sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
         exit;
     }
     if (isset($replyid)) {
@@ -208,8 +168,6 @@ if (stripos($msg,"/unban")===0) {
             $usersbanned = '<a href="tg://user?id=' . $id . '">' . $id . '</a>';
         }
         sm($chatID, "Ho sbannato $usersbanned [$id] dal gruppo.");
-
-
     }
 }
 
@@ -217,7 +175,11 @@ if (stripos($msg,"/unban")===0) {
 
 if (stripos($msg, '/mute') === 0) {
     if (!isAdmin($chatID, $userID)) {
-        sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+        if (isset($cbdata)) {
+            cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+        } else {
+            sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+        }
         exit;
     }
     $args = explode(' ', $msg);
@@ -335,7 +297,11 @@ if (stripos($msg, '/mute') === 0) {
 
 if (stripos($msg,"/unmute")===0) {
     if (!isAdmin($chatID, $userID)) {
-        sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+        if (isset($cbdata)) {
+            cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+        } else {
+            sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+        }
         exit;
     }
     if (isset($replyid)) {
@@ -377,6 +343,55 @@ if (stripos($msg,"/unmute")===0) {
             $usersbanned = '<a href="tg://user?id=' . $id . '">' . $id . '</a>';
         }
         sm($chatID, "Ho smutato $usersbanned [$id].");
+
+
+    }
+}
+if (stripos($msg,"/kick")===0) {
+    if (!isAdmin($chatID, $userID)) {
+        if (isset($cbdata)) {
+            cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+        } else {
+            sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+        }
+        exit;
+    }
+    if (isset($replyid)) {
+        if (!isOk(ban($chatID, $replyuserid)) || !isOK(unban($chatID,$replyuserid))) {
+            sm($chatID, "Non ho i permessi sufficenti per eseguire questa azione,assicurati che io sia admin");
+            exit;
+        }
+        if (isset($replyusername)) {
+            $usersbanned = '@' . $replyusername;
+        } else {
+            $usersbanned = '<a href="tg://user?id=' . $replyuserid . '">' . htmlspecialchars($replynome) . '</a>';
+        }
+        sm($chatID, "Ho kickato $usersbanned [$replyuserid].");
+    } else {
+        $args = explode(' ',$msg);
+        if (stripos($args[1], "@") === 0) {
+            $id = id($args[1]);
+            if (!$id) {
+                sm($chatID, 'Utente non trovato');
+                exit;
+            }
+        } else {
+            if (!is_numeric($args[1])) {
+                sm($chatID, 'ID non valido');
+                exit;
+            }
+            $id = $args[1];
+        }
+        if (!isOK(ban($chatID, $id)) || !isOk(unban($chatID,$id))) {
+            sm($chatID, "Non ho i permessi sufficenti per eseguire questa azione,assicurati che io sia admin");
+            exit;
+        }
+        if (username($id)) {
+            $usersbanned = '@' . username($id);
+        } else {
+            $usersbanned = '<a href="tg://user?id=' . $id . '">' . $id . '</a>';
+        }
+        sm($chatID, "Ho kickato $usersbanned [$id].");
 
 
     }
