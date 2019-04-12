@@ -3,7 +3,9 @@ Aegislash group defender è un bot in PHP che ti aiuterà a gestire i tuoi grupp
 Demo:  <a href="https://t.me/AegislashBot">@AegislashBot</a>
 
 <img src="https://i.ibb.co/5sYngjN/aegislash.jpg" />
+
 - - -
+
 # TO-DO List
 - [x] Ban,Unban e Kick
 - [x] Mute e Unmute
