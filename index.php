@@ -1,7 +1,6 @@
 <?php
 echo '<h1 align="center">SilBot X Aegislash version </h1>';
-if (isset($_GET['api'])) $token   = $_GET['api'];
-$api     = $token;
+if (isset($_GET['api'])) { $token   = $_GET['api']; $api = $token;}
 if (isset($_GET['userbot']))$userbot = $_GET['userbot'];
 
 $content = file_get_contents("php://input");
@@ -21,8 +20,8 @@ $config  = array(
     //MYSQL
     "ip" => "localhost", // se non usi altervista metti l'indirizzo del database, di norma localhost se è hostato sullo stesso server
     "user" => "root", //se non usi altervista inserisci il nome utente del DB
-    "password" => "psw", //se non usi altervista inserisci la password di mysql
-    "database" => "aegislash", //se non usi altervista inserisci il nome del database
+    "password" => "", //se non usi altervista inserisci la password di mysql
+    "database" => "", //se non usi altervista inserisci il nome del database
     //TELEGRAM
     "show_update" => false,
     "action" => false, //true per mandare azioni come typing... e false per non mandare nulla
@@ -53,11 +52,13 @@ if ($config["ip_check"]["active"] && isset($token)) {
         }
     }
 }
-if (isset($_GET["api"])) {
+if (!isset($_GET["api"])) {
+    exit;
+}
     include("vars.php");
     include("functions.php");
     if ($config['db']) {
         include("database.php");
     }
     include("comandi.php");
-}
+
