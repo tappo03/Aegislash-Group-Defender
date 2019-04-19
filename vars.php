@@ -45,7 +45,7 @@ if (isset($update["message"]["location"]["longitude"])) $longitudine = $update["
 if (isset($update["message"]["location"]["latitude"])) $latitudine = $update["message"]["location"]["latitude"];
 if (isset($update["message"]["video"]["file_id"])) $video = $update["message"]["video"]["file_id"];
 if (isset($update["message"]["photo"][0]["file_id"])) $photo = $update["message"]["photo"][0]["file_id"];
-if (isset($update["message"]["message"]["caption"])) $didascalia = $update["message"]["caption"];
+if (isset($update["message"]["caption"])) $didascalia = $update["message"]["caption"];
 //callback
 if ($update["callback_query"]) {
     if (isset($update["callback_query"]["id"])) $cbid = $update["callback_query"]["id"];

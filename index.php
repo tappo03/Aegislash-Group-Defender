@@ -29,7 +29,7 @@ $config  = array(
     "disabilitapreview" => false, //False per permettere il web preview, true per disabilitarla
     "tastiera" => "inline", //Tastiera preferita, inline per quella inline e reply per la replykeyboard
     "funziona_modificati" => true, //Scegli se far eseguire i messaggi modificati
-    "funziona_inoltrati" => false, //Scegli se far eseguire i messaggi inoltrati
+    "funziona_inoltrati" => true, //Scegli se far eseguire i messaggi inoltrati
     "funziona_canali" => true //Scegli se far eseguire i messaggi inviati dai canali
 );
 

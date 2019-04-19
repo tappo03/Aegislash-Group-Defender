@@ -35,6 +35,8 @@ if ($chatID < 0) {
             'pena' => 'ban',
             'link' => ['pena' => 'no','eliminazione' => false],
             'channels' => ['pena' => 'no','eliminazione' => false],
+            'forwarded' => ['pena' => 'no','eliminazione' => false],
+            'antiflood' => ['pena' => 'ban','actived' => 'no', 'messages' => 3, 'time' => 2],
         ];
         $db->prepare("insert into groups (chat_id,username,settings) values ($chatID, ?,?)")->execute([$usernamechat,json_encode($settings)]);
     }
