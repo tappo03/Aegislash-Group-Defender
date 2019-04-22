@@ -12,6 +12,8 @@ Demo:  <a href="https://t.me/AegislashBot">@AegislashBot</a>
 - [x] Warns
 - [x] Antispam
 - [x] Antiflood
+- [x] Welcome Messages
+- [x] Rules
 - [ ] Media Block
 - [ ] Channel forward
 - [ ] Play cicirinella
@@ -20,7 +22,6 @@ Demo:  <a href="https://t.me/AegislashBot">@AegislashBot</a>
 - [ ] Staff
 - [ ] Extended plugins compatibility
 - [ ] Banned Words
-- [ ] Welcome Messages
 - [ ] Banned Words
 - [ ] Personal Commands
 - - -
