@@ -18,6 +18,35 @@ function sr($method, $args)
     curl_close($request);
     return $result;
 }
+function entitytohtml($msg,$entities) {
+    $added = 0;
+    $msg = htmlspecialchars($msg);
+    foreach($entities as $entity) {
+        if ($entity['type'] == "bold") {
+            $msg = substr_replace($msg, '<b>', $added+$entity['offset'], 0);
+            $msg = substr_replace($msg, '</b>', $added+$entity['offset']+3+$entity['length'], 0);
+            $added += 7;
+        }
+        if ($entity['type'] == "italic") {
+            $msg = substr_replace($msg, '<i>', $added+$entity['offset'], 0);
+            $msg = substr_replace($msg, '</i>', $added+$entity['offset']+3+$entity['length'], 0);
+            $added += 7;
+        }
+        if ($entity['type'] == "code" || $entity['type'] == "pre") {
+            $msg = substr_replace($msg, '<code>', $added+$entity['offset'], 0);
+            $msg = substr_replace($msg, '</code>', $added+$entity['offset']+6+$entity['length'], 0);
+            $added += 13;
+        }
+        if ($entity['type'] == "text_link") {
+            $ins = "<a href='$entity[url]'>";
+            $msg = substr_replace($msg, $ins, $added+$entity['offset'], 0);
+            $msg = substr_replace($msg, '</a>', $added+$entity['offset']+strlen($ins)+$entity['length'], 0);
+            $added += strlen($ins)+4;
+        }
+    }
+
+    return $msg;
+}
 function action($chatID, $action)
 {
     $args = array(

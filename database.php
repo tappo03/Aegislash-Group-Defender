@@ -20,11 +20,13 @@ username varchar(50),
 warns varchar(20000) DEFAULT '',
 settings varchar(2000) DEFAULT '',
 media_block varchar(2000) DEFAULT '',
+welcome text DEFAULT '',
+rules text DEFAULT '',
 PRIMARY KEY (chat_id))");
     $groups->execute();
     echo "Database installato";
 }
-$tabella = 'users';
+$tabella = 'groups';
 if ($chatID < 0) {
     $q = $db->prepare("select * from $tabella where chat_id = ? LIMIT 1");
     $q->execute([$chatID]);
@@ -37,10 +39,14 @@ if ($chatID < 0) {
             'channels' => ['pena' => 'no','eliminazione' => false],
             'forwarded' => ['pena' => 'no','eliminazione' => false],
             'antiflood' => ['pena' => 'ban','actived' => 'no', 'messages' => 3, 'time' => 2],
+            'welcome' => false,
+            'rules' => false,
         ];
+
         $db->prepare("insert into groups (chat_id,username,settings) values ($chatID, ?,?)")->execute([$usernamechat,json_encode($settings)]);
     }
 }
+$tabella = 'users';
 if ($userID ) {
     $q = $db->prepare("select * from $tabella where chat_id = ? LIMIT 1");
     $q->execute([$userID]);

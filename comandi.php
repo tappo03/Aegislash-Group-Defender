@@ -31,8 +31,15 @@ if ($chatID < 0) {
     if (isset($update['message']['new_chat_member'])) {
         if ($update['message']['new_chat_member']['username'] == $userbot) {
             sm($chatID, "Grazie per avermi aggiunto! Fammi admin per permettermi di funzionare correttamente!");
+        } else {
+            $q = $db->prepare('SELECT welcome,settings FROM groups WHERE chat_id = ?');
+            $q->execute([$chatID]);
+            $e = $q->fetch(PDO::FETCH_ASSOC);
+            $message = json_decode($e['welcome'],true);
+            if (json_decode($e['settings'],true)['welcome'] && strlen($message) > 0) {
+                sm($chatID,str_replace(['{NAME}','{SURNAME}','{ID}','{USERNAME}'],[htmlspecialchars($nome),htmlspecialchars($cognome),$userID,htmlspecialchars($username)],$message));
+            }
         }
-
     }
     // Menu
     if (isset($msg) && stripos($msg, "/settings") === 0) {
@@ -60,13 +67,157 @@ if ($chatID < 0) {
             array("text" => "☔️Antiflood",
                 "callback_data" => "/menuantiflood"),
         );
+        $menu[] = array(
+            array("text" => "🆕 Messaggio Benvenuto",
+                "callback_data" => "/welcome"),
+            array("text" => "👮🏻 Regole",
+                "callback_data" => "/menurules"),
+        );
         if (isset($cbdata)) {
             cb_reply($cbid, "Ok", false, $cbmid, 'Ecco la lista delle impostazioni', $menu);
         } else {
             sm($chatID, 'Ecco la lista delle impostazioni', $menu);
         }
     }
-
+    if (isset($cbdata)&& stripos($cbdata, '/menurules')===0) {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id = ?');
+        $q->execute([$chatID]);
+        $e = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($e['settings'],true);
+        if (explode(' ',$cbdata)[1] == 'toggle') {
+            $imp['rules'] ? $imp['rules'] = false : $imp['rules'] = true;
+            $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1')->execute([json_encode($imp)]);
+        }
+        $imp['rules'] ? $act = '❌Disabilita' : $act = '✅Abilita';
+        $menu[] = [['text' => $act,'callback_data' => '/menurules toggle']];
+        $menu[] = array(
+            array("text" => "👀Vedi Messaggio attuale",
+                "callback_data" => "/regole"),
+        );
+        $menu[] = array(
+            array("text" => "🔙Torna indietro",
+                "callback_data" => "/settings"),
+        );
+        cb_reply($cbid, "Ok", false, $cbmid, "👮🏻 Qui puoi impostare delle regole che serviranno a indicare agli utenti come comportarsi nel gruppo.\n\n👤Se l'opzione è abilitata gli utenti potranno accedere al ragolamento grazie al comando /regole.\n\n👷🏻Per impostare un regolamento scrivi il messaggio nella chat e poi usa il comando /setrules rispondendoci",$menu);
+    }
+    if ($msg == '/regole') {
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id = ?');
+        $q->execute([$chatID]);
+        $e = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($e['settings'],true);
+        if ((!isAdmin($chatID, $userID)) && (!$imp['rules'] or $cbdata)) {
+            exit;
+        }
+        $q = $db->prepare('SELECT rules FROM groups WHERE chat_id = ?');
+        $q->execute([$chatID]);
+        $e = $q->fetch(PDO::FETCH_ASSOC);
+        $message = json_decode($e['rules'],true);
+        if ($message == "") {
+            sm($chatID,'Non sono ancora state impostate delle regole, fallo con /setrules');
+            exit;
+        }
+        sm($chatID,$message);
+    }
+    if ($msg == '/setrules') {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        if (!isset( $update["message"]["reply_to_message"]["text"])) {
+            sm($chatID,'Rispondi al messaggio che deve essere impostato come benvenuto.');
+            exit;
+        } else {
+            if (strlen( $update["message"]["reply_to_message"]["text"]) > 4000) {
+                sm($chatID,'Il messaggio non deve superare i 4000 caratteri oppure rischia di non essere inviato!');
+                exit;
+            }
+            $message = entitytohtml( $update["message"]["reply_to_message"]["text"],$update['message']['reply_to_message']['entities']);
+            sm($chatID,'Regole impostate:'.PHP_EOL .$message);
+            $db->prepare('UPDATE groups SET rules = ? WHERE chat_id = ?')->execute([json_encode($message),$chatID]);
+        }
+    }
+    if (isset($cbdata)&& stripos($cbdata, '/welcome')===0) {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id = ?');
+        $q->execute([$chatID]);
+        $e = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($e['settings'],true);
+        if (explode(' ',$cbdata)[1] == 'toggle') {
+            $imp['welcome'] ? $imp['welcome'] = false : $imp['welcome'] = true;
+            $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1')->execute([json_encode($imp)]);
+        }
+        $imp['welcome'] ? $act = '❌Disabilita' : $act = '✅Abilita';
+        $menu[] = [['text' => $act,'callback_data' => '/welcome toggle']];
+        $menu[] = array(
+            array("text" => "👀Vedi Messaggio attuale",
+                "callback_data" => "/seewelcome"),
+        );
+        $menu[] = array(
+            array("text" => "🔙Torna indietro",
+                "callback_data" => "/settings"),
+        );
+        cb_reply($cbid, "Ok", false, $cbmid, "👥In questa sezione puoi impostare un messaggio che verrà inviato a ogni utente alla sua entrata.\n\n#️⃣ Puoi utilizzare i tag {NAME} {SURNAME} {ID} {USERNAME} che verranno sostituiti con le informazioni dell'utente.\n\n✏️Per impostare il messaggio di bnevenuto scrivilo prima in chat con la formattazione che preferisci e poi invia il comando /setwelcome rispondendoci.",$menu);
+    }
+    if ($cbdata == '/seewelcome') {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $q = $db->prepare('SELECT welcome FROM groups WHERE chat_id = ?');
+        $q->execute([$chatID]);
+        $e = $q->fetch(PDO::FETCH_ASSOC);
+        $message = json_decode($e['welcome'],true);
+        if ($message == "") {
+            sm($chatID,'Non è stato ancora impostato alcun messaggio di benvenuto, fallo con /setwelcome');
+            exit;
+        }
+        sm($chatID,$message);
+    }
+    if ($msg == '/setwelcome') {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        if (!isset( $update["message"]["reply_to_message"]["text"])) {
+            sm($chatID,'Rispondi al messaggio che deve essere impostato come benvenuto.');
+            exit;
+        } else {
+            if (strlen( $update["message"]["reply_to_message"]["text"]) > 4000) {
+                sm($chatID,'Il messaggio non deve superare i 4000 caratteri oppure rischia di non essere inviato!');
+                exit;
+            }
+            $message = entitytohtml( $update["message"]["reply_to_message"]["text"],$update['message']['reply_to_message']['entities']);
+            sm($chatID,'Benvenuto impostato:'.PHP_EOL .$message);
+            $db->prepare('UPDATE groups SET welcome = ? WHERE chat_id = ?')->execute([json_encode($message),$chatID]);
+        }
+    }
     if (isset($cbdata)&& stripos($cbdata, '/setap')===0) {
         if (!isAdmin($chatID, $userID)) {
             if (isset($cbdata)) {
