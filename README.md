@@ -14,11 +14,11 @@ Demo:  <a href="https://t.me/AegislashBot">@AegislashBot</a>
 - [x] Antiflood
 - [x] Welcome Messages
 - [x] Rules
+- [x] Night mode
 - [ ] Media Block
 - [ ] Channel forward
 - [ ] Play cicirinella
 - [ ] Social notifications
-- [ ] Night mode
 - [ ] Staff
 - [ ] Extended plugins compatibility
 - [ ] Banned Words
