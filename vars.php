@@ -38,6 +38,9 @@ if ($chatID < 0) {
 }
 //media
 if (isset($update["message"]["audio"]["file_id"])) $audio = $update["message"]["audio"]["file_id"];
+if (isset($update["message"]["voice"]["file_id"])) $voice = $update["message"]["voice"]["file_id"];
+if (isset($update["message"]["document"]["file_id"])) $document = $update["message"]["document"]["file_id"];
+if (isset($update["message"]["video_note"]["file_id"])) $video_note = $update["message"]["video_note"]["file_id"];
 if (isset($update["message"]["sticker"]["file_id"])) $sticker = $update["message"]["sticker"]["file_id"];
 if (isset($update["message"]["animation"]["file_id"])) $animation = $update["message"]["animation"]["file_id"];
 if (isset($update["message"]["location"])) $location = $update["message"]["location"];

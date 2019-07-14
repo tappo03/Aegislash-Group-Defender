@@ -24,10 +24,46 @@ if (isset($msg)) {
             array("text" => "🔙Torna indietro",
                 "callback_data" => "/start"),
         );
-        cb_reply($cbid, "Ok", false, $cbmid,"Funzioni del bot attuali: /ban,/unban,/mute,/unmute" , $menu);
+        cb_reply($cbid, "Ok", false, $cbmid,"Funzioni del bot attuali: \n⛔️/ban,/unban,/mute,/unmute, /kick\n❗️Warn\n☔️Antiflood\n💬Benvenuto e regole\n🌑Modalità notte\n📩Antispam" , $menu);
     }
 }
 if ($chatID < 0) {
+
+    // Night Mode
+    $q = $db->prepare('SELECT settings FROM groups WHERE chat_id = ?');
+    $q->execute([$chatID]);
+    $e = $q->fetch(PDO::FETCH_ASSOC);
+    $imp = json_decode($e['settings'],true);
+    if ($imp['night']['enabled']) {
+        if ($imp['night']['start'] < $imp['night']['end']) {
+            if (date('H:i') > $imp['night']['start'] && date('H:i') < $imp['night']['end']) {
+                $isnight = true;
+            }
+        } elseif ($imp['night']['start'] > $imp['night']['end']) {
+            if (date('H:i') > $imp['night']['start'] || date('H:i') < $imp['night']['end']) {
+                $isnight = true;
+            }
+        }
+    }
+    if ($isnight) {
+        if (!$imp['night']['media']) {
+            if (isset($audio) || isset($sticker) || isset($photo)|| isset($document)|| isset($video) || isset($animation) || isset($video_note) || isset($voice)) {
+                if (!isAdmin($chatID, $userID)) {
+                    dm($chatID, $msgid);
+                }
+            }
+        }
+        if (!$imp['night']['text']) {
+            if (isset($msg) && !$cbdata) {
+                if (!isAdmin($chatID, $userID)) {
+                    dm($chatID, $msgid);
+                }
+            }
+        }
+    }
+
+
+
     if (isset($update['message']['new_chat_member'])) {
         if ($update['message']['new_chat_member']['username'] == $userbot) {
             sm($chatID, "Grazie per avermi aggiunto! Fammi admin per permettermi di funzionare correttamente!");
@@ -38,6 +74,19 @@ if ($chatID < 0) {
             $message = json_decode($e['welcome'],true);
             if (json_decode($e['settings'],true)['welcome'] && strlen($message) > 0) {
                 sm($chatID,str_replace(['{NAME}','{SURNAME}','{ID}','{USERNAME}'],[htmlspecialchars($nome),htmlspecialchars($cognome),$userID,htmlspecialchars($username)],$message));
+            }
+            if ($isnight && !$imp['night']['join']) {
+                if ($username) {
+                    $userbanned = '@' . $username;
+                } else {
+                    $userbanned = '<a href="tg://user?id=' . $id . '">' . htmlspecialchars($nome) . '</a>';
+                }
+                if (!isOk(limita($chatID, $userID))) {
+                    sm($chatID, "Non ho i permessi sufficenti per eseguire questa azione,assicurati che io sia admin");
+                    exit;
+                }
+                $menu[] = [['text' => "✔Unmuta", "callback_data" => "/unmute $userID"]];
+                sm($chatID, "Ho mutato $userbanned [$userID] per essere entrato nel gruppo durante la modalità notte.", $menu);
             }
         }
     }
@@ -73,10 +122,96 @@ if ($chatID < 0) {
             array("text" => "👮🏻 Regole",
                 "callback_data" => "/menurules"),
         );
+        $menu[] = array(
+            array("text" => "🌑Night mode",
+                "callback_data" => "/night"),
+        );
         if (isset($cbdata)) {
             cb_reply($cbid, "Ok", false, $cbmid, 'Ecco la lista delle impostazioni', $menu);
         } else {
             sm($chatID, 'Ecco la lista delle impostazioni', $menu);
+        }
+    }
+    if (isset($cbdata)&& stripos($cbdata, '/night')===0) {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id = ?');
+        $q->execute([$chatID]);
+        $e = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($e['settings'],true);
+        if (explode(' ',$cbdata)[1] == 'toggle') {
+            $imp['night']['enabled'] ? $imp['night']['enabled'] = false : $imp['night']['enabled'] = true;
+            $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1')->execute([json_encode($imp)]);
+        } elseif (explode(' ',$cbdata)[1] == 'media') {
+        $imp['night']['media'] ? $imp['night']['media'] = false : $imp['night']['media'] = true;
+        $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1')->execute([json_encode($imp)]);
+        } elseif (explode(' ',$cbdata)[1] == 'text') {
+            $imp['night']['text'] ? $imp['night']['text'] = false : $imp['night']['text'] = true;
+            $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1')->execute([json_encode($imp)]);
+        } elseif (explode(' ',$cbdata)[1] == 'join') {
+            $imp['night']['join'] ? $imp['night']['join'] = false : $imp['night']['join'] = true;
+            $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = '. $chatID . ' LIMIT 1')->execute([json_encode($imp)]);
+        }
+        $imp['night']['start'] ?  $start = $imp['night']['start'] : $start = 'non impostato';
+        $imp['night']['end'] ? $end = $imp['night']['end'] : $end = 'non impostato';
+        $imp['night']['enabled'] ? $act = '❌Disabilita' : $act = '✅Abilita';
+        !$imp['night']['text'] ? $actt = '❌Messaggi' : $actt = '✅Messaggi';
+        !$imp['night']['media'] ? $actm = '❌Media' : $actm = '✅Media';
+        !$imp['night']['join'] ? $actj = '❌Entrate' : $actj = '✅Entrate';
+        $menu[] = [['text' => $act,'callback_data' => '/night toggle']];
+        $menu[] = array(
+            array("text" => "🌑Imposta orario",
+                "callback_data" => "/timenight"),
+        );
+        $menu[] = [['text' => $actt,'callback_data' => '/night text'],['text' => $actm,'callback_data' => '/night media']];
+        $menu[] = [['text' => $actj,'callback_data' => '/night join']];
+        $menu[] = array(
+            array("text" => "🔙Torna indietro",
+                "callback_data" => "/settings"),
+        );
+        cb_reply($cbid, "Ok", false, $cbmid, "🌑Qui potrai abilitare o disabilitare la modalità notte, che può limitare l'invio di messaggi o media in orari notturni. \n\n🌕Inizio: $start\n☀️Fine: $end",$menu);
+    }
+    if (isset($cbdata)&& stripos($cbdata, '/timenight')===0) {
+        if (!isAdmin($chatID, $userID)) {
+            if (isset($cbdata)) {
+                cb_reply($cbid,"Solo gli admin possono eseguire questo comando!",true);
+            } else {
+                sm($chatID, "Solo gli admin possono eseguire questo comando!", false, false, false, $msgid);
+            }
+            exit;
+        }
+        $q = $db->prepare('SELECT settings FROM groups WHERE chat_id = ?');
+        $q->execute([$chatID]);
+        $e = $q->fetch(PDO::FETCH_ASSOC);
+        $imp = json_decode($e['settings'], true);
+        if ($cbdata == '/timenight') {
+            for ($i = 0;$i < 24; $i+=4) {
+                $menu[] = [['text' => $i.':00', 'callback_data' => '/timenight '.$i.':00'],['text' => ($i+1).':00', 'callback_data' => '/timenight ' . ($i+1) . ':00'],['text' => ($i+2).':00', 'callback_data' => '/timenight ' . ($i+2) . ':00'],['text' => ($i+3).':00', 'callback_data' => '/timenight ' . ($i+3) . ':00']];
+            }
+            cb_reply($cbid, "Ok", false, $cbmid, "🌑Selezione ora di inizio", $menu);
+        } elseif (count(explode(' ',$cbdata)) == 2) {
+            $start  = explode(' ',$cbdata)[1];
+            for ($i = 0;$i < 24; $i+=4) {
+                $menu[] = [['text' => $i.':00', 'callback_data' => '/timenight ' . $start   .' ' .$i.':00'],['text' => ($i+1).':00', 'callback_data' => '/timenight ' . $start.  ' ' . ($i+1) . ':00'],['text' => ($i+2).':00', 'callback_data' => '/timenight ' . $start.  ' ' .($i+2) . ':00'],['text' => ($i+3).':00', 'callback_data' => '/timenight ' . $start.  ' ' .($i+3) . ':00']];
+            }
+            cb_reply($cbid, "Ok", false, $cbmid, "🌑Selezione ora di fine", $menu);
+        } elseif (count(explode(' ',$cbdata)) == 3) {
+            $start  = explode(' ',$cbdata)[1];
+            $end  = explode(' ',$cbdata)[2];
+            $imp['night']['start'] = $start;
+            $imp['night']['end'] = $end;
+            $db->prepare('UPDATE groups SET settings = ? WHERE chat_id = ?')->execute([json_encode($imp),$chatID]);
+            $menu[] = array(
+                array("text" => "🔙Torna indietro",
+                    "callback_data" => "/night"),
+            );
+            cb_reply($cbid, "Ok", false, $cbmid, "Impostata modalità notte $start - $end", $menu);
         }
     }
     if (isset($cbdata)&& stripos($cbdata, '/menurules')===0) {
@@ -143,8 +278,11 @@ if ($chatID < 0) {
                 sm($chatID,'Il messaggio non deve superare i 4000 caratteri oppure rischia di non essere inviato!');
                 exit;
             }
-            $message = entitytohtml( $update["message"]["reply_to_message"]["text"],$update['message']['reply_to_message']['entities']);
-            sm($chatID,'Regole impostate:'.PHP_EOL .$message);
+            $message = $update["message"]["reply_to_message"]["text"];
+            if (!isOK(sm($chatID,'Regole impostate:'.PHP_EOL .$message))) {
+                sm($chatID,'Sintassi HTML errata');
+                exit;
+            }
             $db->prepare('UPDATE groups SET rules = ? WHERE chat_id = ?')->execute([json_encode($message),$chatID]);
         }
     }
@@ -213,8 +351,11 @@ if ($chatID < 0) {
                 sm($chatID,'Il messaggio non deve superare i 4000 caratteri oppure rischia di non essere inviato!');
                 exit;
             }
-            $message = entitytohtml( $update["message"]["reply_to_message"]["text"],$update['message']['reply_to_message']['entities']);
-            sm($chatID,'Benvenuto impostato:'.PHP_EOL .$message);
+            $message = $update["message"]["reply_to_message"]["text"];
+            if (!isOK(sm($chatID,'Benvenuto impostato:'.PHP_EOL .$message))) {
+                sm($chatID,'Sintassi HTML errata');
+                exit;
+            }
             $db->prepare('UPDATE groups SET welcome = ? WHERE chat_id = ?')->execute([json_encode($message),$chatID]);
         }
     }

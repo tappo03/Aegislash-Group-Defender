@@ -144,12 +144,6 @@ function cb_reply($id, $text, $alert = false, $cbmid = false, $ntext = false, $n
     global $config;
     if ($npm == 'pred')
         $npm = $config['parse_mode'];
-    $args = array(
-        'callback_query_id' => $id,
-        'text' => $text,
-        'show_alert' => $alert
-    );
-    $r    = sr("answerCallbackQuery", $args);
     if ($cbmid) {
         if ($nmenu) {
             $rm = array(
@@ -167,6 +161,12 @@ function cb_reply($id, $text, $alert = false, $cbmid = false, $ntext = false, $n
             $args["reply_markup"] = $rm;
         $r = sr("editMessageText", $args);
     }
+    $args = array(
+        'callback_query_id' => $id,
+        'text' => $text,
+        'show_alert' => $alert
+    );
+    $r    = sr("answerCallbackQuery", $args);
     return $r;
 }
 function editMessageText()
